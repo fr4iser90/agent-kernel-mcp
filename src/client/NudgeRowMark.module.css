@@ -1,0 +1,10 @@
+.mark {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  color: var(--dsw-alias-label-secondary, #8b8b9a);
+  opacity: 0.9;
+}

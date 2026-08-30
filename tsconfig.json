@@ -1,14 +1,12 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2022",
+    "outDir": "dist/mcp",
+    "rootDir": "src/mcp",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "outDir": "dist",
-    "rootDir": "src",
-    "strict": true,
-    "skipLibCheck": true,
     "declaration": true,
-    "esModuleInterop": true
+    "skipLibCheck": true
   },
-  "include": ["src/**/*"]
+  "include": ["src/mcp/**/*.ts"]
 }

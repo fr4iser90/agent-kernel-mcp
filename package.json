@@ -1,24 +1,37 @@
 {
   "name": "agent-kernel-mcp",
-  "version": "0.1.0",
-  "description": "Stdio MCP server for the agent-kernel control-plane HTTP API (VS Code / Cursor / DeepSeek Harness).",
+  "version": "0.2.0",
+  "description": "Agent Kernel for DeepSeek Harness: MCP tools + Session Header connect/idle-nudge (installable DSH bundle).",
   "license": "MIT",
   "type": "module",
   "bin": {
-    "agent-kernel-mcp": "./dist/index.js"
+    "agent-kernel-mcp": "./dist/mcp/index.js"
   },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./lib/index.js",
+  "types": "./lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "types": "./lib/types/client/index.d.ts",
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "dist",
+    "lib",
+    "cordis.patch.yml",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "dev": "tsx src/index.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "start": "node dist/index.js",
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.host.json && tsdown",
+    "build:mcp": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.host.json --noEmit",
+    "start": "node dist/mcp/index.js",
     "prepublishOnly": "pnpm run build"
   },
   "engines": {
@@ -28,24 +41,64 @@
     "type": "git",
     "url": "git+https://github.com/fr4iser90/agent-kernel-mcp.git"
   },
-  "bugs": {
-    "url": "https://github.com/fr4iser90/agent-kernel-mcp/issues"
-  },
-  "homepage": "https://github.com/fr4iser90/agent-kernel-mcp#readme",
   "keywords": [
     "mcp",
-    "model-context-protocol",
     "agent-kernel",
     "deepseek-harness",
-    "vscode"
+    "dsh-plugin"
   ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
     "zod": "^3.24.2"
   },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "*",
+    "@deepseek-ai/dsh-agent": "*",
+    "@deepseek-ai/dsh-client-connection": "*",
+    "@deepseek-ai/dsh-client-locale": "*",
+    "@deepseek-ai/dsh-client-runtime": "*",
+    "@deepseek-ai/dsh-client-ui-conversation": "*",
+    "@deepseek-ai/dsh-client-ui-primitives": "*",
+    "@deepseek-ai/dsh-client-ui-slots": "*",
+    "@deepseek-ai/dsh-client-ui-workspace": "*",
+    "@deepseek-ai/dsh-host-webserver": "*",
+    "@deepseek-ai/dsh-llm": "*",
+    "@deepseek-ai/dsh-mcp-client": "*",
+    "@deepseek-ai/dsh-session": "*",
+    "react": "^18.2.0"
+  },
   "devDependencies": {
+    "@deepseek-ai/cordis": "workspace:*",
+    "@deepseek-ai/dsh-agent": "workspace:*",
+    "@deepseek-ai/dsh-client-connection": "workspace:*",
+    "@deepseek-ai/dsh-client-locale": "workspace:*",
+    "@deepseek-ai/dsh-client-runtime": "workspace:*",
+    "@deepseek-ai/dsh-client-ui-conversation": "workspace:*",
+    "@deepseek-ai/dsh-client-ui-primitives": "workspace:*",
+    "@deepseek-ai/dsh-client-ui-slots": "workspace:*",
+    "@deepseek-ai/dsh-client-ui-workspace": "workspace:*",
+    "@deepseek-ai/dsh-host-webserver": "workspace:*",
+    "@deepseek-ai/dsh-llm": "workspace:*",
+    "@deepseek-ai/dsh-session": "workspace:*",
     "@types/node": "^22.13.10",
+    "@types/react": "~18.3.1",
+    "react": "^18.2.0",
+    "tsdown": "^0.22.2",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-workspace"
+      ],
+      "platform": "web"
+    }
   }
 }

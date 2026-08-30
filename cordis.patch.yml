@@ -1,0 +1,30 @@
+# Agent Kernel DSH profile bundle — install with:
+#   dsh plugin --profile web add file:/path/to/agent-kernel-mcp
+#   # or: github:fr4iser90/agent-kernel-mcp
+#
+# Mounts Agent Kernel Session Header + MCP tools.
+
+- insert:
+    - id: agent-kernel
+      name: agent-kernel-mcp
+      inject: [webRuntime, webServer, sessions]
+      config:
+        enabled: true
+        watchdogIntervalMinutes: 5
+        trustedHosts: !!js ctx.webRuntime.trustedHosts
+
+    - id: mcp-agent-kernel
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: agent_kernel
+        transport: stdio
+        command: node
+        args:
+          - !!js dshHomePath('profiles', 'web', 'node_modules', 'agent-kernel-mcp', 'dist', 'mcp', 'index.js')
+        env:
+          AGENT_KERNEL_URL: !!js process.env.AGENT_KERNEL_URL || ''
+          AGENT_KERNEL_TOKEN: !!js process.env.AGENT_KERNEL_TOKEN || ''
+          DSH_HOME: !!js process.env.DSH_HOME || ''
+        cwd: !!js dshHomePath('profiles', 'web', 'node_modules', 'agent-kernel-mcp')
+        toolCallTimeoutMs: 60000
+        failOnStartupError: true

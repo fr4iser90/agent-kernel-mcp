@@ -1,0 +1,145 @@
+.capsule {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 4px 12px;
+  gap: 8px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 18px;
+  color: var(--dsw-alias-label-primary);
+  background: transparent;
+  font-family: var(--dsw-font-family);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.label:has(input:disabled) {
+  cursor: default;
+}
+
+.checkbox {
+  margin: 0;
+  accent-color: var(--dsw-alias-label-primary);
+}
+
+.gear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 2px;
+  border: none;
+  border-radius: 6px;
+  color: var(--dsw-alias-label-secondary);
+  background: transparent;
+  cursor: pointer;
+}
+
+.gear:hover:not(:disabled) {
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-fill-hover, transparent);
+}
+
+.gear:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.time {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.timeSecondary {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--dsw-alias-label-dimmed);
+  font-size: 12px;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.promptField {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.promptLabel {
+  color: var(--dsw-alias-label-secondary);
+  font-size: 13px;
+}
+
+.prompt {
+  width: 100%;
+  min-height: 100px;
+  padding: 8px 10px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 8px;
+  color: var(--dsw-alias-label-primary);
+  background: transparent;
+  font-family: var(--dsw-font-family);
+  font-size: 13px;
+  line-height: 20px;
+  resize: vertical;
+}
+
+.durationField {
+  margin: 0;
+  padding: 0;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.radioRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--dsw-alias-label-primary);
+  cursor: pointer;
+}
+
+.hoursRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 24px;
+}
+
+.hoursInput {
+  width: 88px;
+  padding: 4px 8px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 6px;
+  color: var(--dsw-alias-label-primary);
+  background: transparent;
+  font-family: var(--dsw-font-family);
+  font-size: 13px;
+}
+
+.error {
+  margin: 8px 0 0;
+  color: var(--dsw-alias-label-danger, #c44);
+  font-size: 13px;
+}

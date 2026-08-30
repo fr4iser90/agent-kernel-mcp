@@ -1,0 +1,48 @@
+/** Locale for Agent Kernel Session Header. */
+export const NS = 'agent-kernel-mcp'
+
+export const zh = {
+  'watchdog.label': 'Agent Kernel',
+  'watchdog.title': '本会话空闲续跑 + Agent Kernel 连接。',
+  'time.placeholder': '—',
+  'nudge.forever': '∞',
+  'nudge.nextSoon': '↓ …',
+  'settings.open': 'Agent Kernel 设置',
+  'dialog.title': 'Agent Kernel',
+  'dialog.description': 'Target / Token 供 MCP。空闲消息与时长仅本会话。',
+  'dialog.targetLabel': 'Target URL',
+  'dialog.tokenLabel': 'Token (ak_session)',
+  'dialog.promptLabel': '空闲消息',
+  'dialog.durationLabel': '有效时长',
+  'dialog.durationForever': '一直开着',
+  'dialog.durationHours': '限时（小时）',
+  'dialog.hoursLabel': '小时',
+  'dialog.save': '保存',
+  'dialog.close': '关闭',
+  'dialog.error': '保存失败',
+  'nudge.rowMarkTitle': 'Agent Kernel 已开启',
+} as const
+
+export const en: Record<keyof typeof zh, string> = {
+  'watchdog.label': 'Agent Kernel',
+  'watchdog.title': 'This Session idle nudge + Agent Kernel connection.',
+  'time.placeholder': '—',
+  'nudge.forever': '∞',
+  'nudge.nextSoon': '↓ …',
+  'settings.open': 'Agent Kernel settings',
+  'dialog.title': 'Agent Kernel',
+  'dialog.description': 'Target URL and token for MCP. Idle message and duration apply to this Session only.',
+  'dialog.targetLabel': 'Target URL',
+  'dialog.tokenLabel': 'Token (ak_session)',
+  'dialog.promptLabel': 'Idle message',
+  'dialog.durationLabel': 'How long active',
+  'dialog.durationForever': 'Forever',
+  'dialog.durationHours': 'Limited (hours)',
+  'dialog.hoursLabel': 'Hours',
+  'dialog.save': 'Save',
+  'dialog.close': 'Close',
+  'dialog.error': 'Save failed',
+  'nudge.rowMarkTitle': 'Agent Kernel nudge on',
+}
+
+export type AgentKernelHeaderKey = keyof typeof zh
