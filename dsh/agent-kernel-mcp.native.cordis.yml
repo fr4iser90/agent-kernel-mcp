@@ -1,0 +1,29 @@
+# Native DeepSeek Harness — insert MCP (must use `insert:`).
+# Requires AGENT_KERNEL_URL and AGENT_KERNEL_MCP_ROOT (absolute path to this repo).
+# Token optional at boot: connect via agent-kernel web, then set AGENT_KERNEL_TOKEN and restart.
+- insert:
+    - id: mcp-agent-kernel
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: agent_kernel
+        transport: stdio
+        command: node
+        args: !!js {
+          const root = process.env.AGENT_KERNEL_MCP_ROOT
+          if (!root) throw new Error('AGENT_KERNEL_MCP_ROOT required (absolute path to agent-kernel-mcp)')
+          return [`${root.replace(/\/$/, '')}/dist/index.js`]
+        }
+        env:
+          AGENT_KERNEL_URL: !!js {
+            const u = process.env.AGENT_KERNEL_URL
+            if (!u) throw new Error('AGENT_KERNEL_URL required (control-plane base URL)')
+            return u
+          }
+          AGENT_KERNEL_TOKEN: !!js process.env.AGENT_KERNEL_TOKEN || ''
+        cwd: !!js {
+          const root = process.env.AGENT_KERNEL_MCP_ROOT
+          if (!root) throw new Error('AGENT_KERNEL_MCP_ROOT required (absolute path to agent-kernel-mcp)')
+          return root.replace(/\/$/, '')
+        }
+        toolCallTimeoutMs: 60000
+        failOnStartupError: true
