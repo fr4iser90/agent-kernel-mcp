@@ -134,7 +134,7 @@ export declare function patchSessionFollowup(previous: SessionFollowupState, pat
  */
 export declare function recordFollowupPoll(state: SessionFollowupState, nowIso: string): SessionFollowupState;
 /**
- * Mark that this Session just received an idle followup followup.
+ * Mark that this Session just received an idle followup.
  * @param state - current armed state.
  * @param nowIso - wake timestamp.
  */

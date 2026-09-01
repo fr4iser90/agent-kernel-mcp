@@ -6,7 +6,7 @@
     "types": ["node"]
   },
   "include": ["src/index.ts", "src/host", "src/client", "src/css-modules.d.ts"],
-  "exclude": ["src/mcp"],
+  "exclude": ["src/mcp", "src/runner"],
   "references": [
     { "path": "../../../vendor/cordis" },
     { "path": "../../core/agent" },
@@ -15,9 +15,9 @@
     { "path": "../../host/webserver" },
     { "path": "../../client/connection/tsconfig.host.json" },
     { "path": "../../client/locale" },
-    { "path": "../../client/runtime" },
+    { "path": "../../client/store" },
     { "path": "../../client/ui-conversation" },
-    { "path": "../../client/ui-workspace" },
+    { "path": "../../client/ui-renderer" },
     { "path": "../../client/ui-slots" },
     { "path": "../../client/ui-primitives" }
   ]

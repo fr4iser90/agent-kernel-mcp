@@ -1,6 +1,7 @@
 /** Browser state for Agent Kernel Session Header. */
 
-import { createSnapshotStore, type SessionId, type SnapshotStore } from '@deepseek-ai/dsh-client-runtime/client'
+import { createSnapshotStore, type SnapshotStore } from '@deepseek-ai/dsh-client-store'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import { DEFAULT_FOLLOWUP_PROMPT } from '../host/idle-followup.ts'
 
 export interface AgentKernelHeaderEntry {

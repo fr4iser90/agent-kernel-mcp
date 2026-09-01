@@ -1,5 +1,6 @@
 /** Browser state for Agent Kernel Session Header. */
-import { type SessionId, type SnapshotStore } from '@deepseek-ai/dsh-client-runtime/client';
+import { type SnapshotStore } from '@deepseek-ai/dsh-client-store';
+import type { SessionId } from '@deepseek-ai/dsh-session/types';
 export interface AgentKernelHeaderEntry {
     readonly watchdogEnabled: boolean;
     readonly followupPrompt: string;
@@ -12,6 +13,8 @@ export interface AgentKernelHeaderEntry {
     readonly kernelUrl: string;
     readonly kernelToken: string;
     readonly kernelConnected: boolean;
+    readonly wssConnected: boolean;
+    readonly wssLastError: string | null;
     readonly error: string | null;
     readonly busy: boolean;
     readonly settingsOpen: boolean;

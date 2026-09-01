@@ -1,5 +1,5 @@
 /** Browser poll of Host Session ids with idle followup armed. */
-import { type SnapshotStore } from '@deepseek-ai/dsh-client-runtime/client';
+import { type SnapshotStore } from '@deepseek-ai/dsh-client-store';
 /** Snapshot: Session id → armed. */
 export interface FollowupIndexState {
     enabled: Record<string, true | undefined>;

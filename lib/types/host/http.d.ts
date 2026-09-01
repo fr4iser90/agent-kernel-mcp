@@ -15,6 +15,8 @@ export interface AgentKernelStatusPayload {
     readonly kernelUrl: string;
     readonly kernelToken: string;
     readonly kernelConnected: boolean;
+    readonly wssConnected: boolean;
+    readonly wssLastError: string | null;
 }
 export interface AgentKernelHttpLimits {
     readonly trustedHosts: readonly string[];

@@ -6,7 +6,7 @@
 import type { ReactNode } from 'react'
 import { IconRefreshOutline14 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
-import type { ObservableSnapshot } from '@deepseek-ai/dsh-client-runtime/client'
+import type { ObservableSnapshot } from '@deepseek-ai/dsh-client-store'
 import type { FollowupIndexState } from './followup-index.ts'
 import { NS } from './locales.ts'
 import css from './FollowupRowMark.module.css'

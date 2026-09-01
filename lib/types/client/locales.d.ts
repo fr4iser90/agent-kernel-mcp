@@ -2,7 +2,9 @@
 export declare const NS = "agent-kernel-mcp";
 export declare const zh: {
     readonly 'watchdog.label': "Agent Kernel";
-    readonly 'watchdog.title': "本会话空闲续跑 + Agent Kernel 连接。";
+    readonly 'watchdog.title': "本会话空闲续跑 + Agent Kernel WSS 连接。";
+    readonly 'wss.connected': "WSS 已连接";
+    readonly 'wss.disconnected': "WSS 未连接";
     readonly 'time.placeholder': "—";
     readonly 'followup.forever': "∞";
     readonly 'followup.nextSoon': "↓ …";

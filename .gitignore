@@ -1,4 +1,5 @@
 node_modules/
+.proof-screenshots/
 *.tsbuildinfo
 .DS_Store
 .env

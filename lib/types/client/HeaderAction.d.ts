@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react';
-import type { ObservableSnapshot, SessionId } from '@deepseek-ai/dsh-client-runtime/client';
+import type { ObservableSnapshot } from '@deepseek-ai/dsh-client-store';
+import type { SessionId } from '@deepseek-ai/dsh-session/types';
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots';
 import type { AgentKernelHeaderState } from './controller.ts';
 import { NS } from './locales.ts';

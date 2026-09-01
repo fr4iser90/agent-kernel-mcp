@@ -51,11 +51,24 @@ bash examples/print-mcp-configs.sh
 | `aider` | `aider --message …` |
 | `opencode` | `opencode run --auto` |
 
+## DSH plugin (web profile)
+
+```bash
+cd ~/Documents/Git/deepseek-harness
+pnpm dsh plugin --profile web add github:fr4iser90/agent-kernel-mcp
+pnpm dsh plugin --profile web add github:fr4iser90/agent-kernel-github-tools
+pnpm dsh web --no-open   # open the printed URL including ?token=...
+```
+
+Requires current [deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) (`@deepseek-ai/dsh-client-store`; the removed `dsh-client-runtime` API is no longer used). This repo ships a prebuilt `lib/client.js` — no local harness checkout needed to install.
+
 ## Build
 
 ```bash
 pnpm install
 pnpm build          # MCP + runner
 pnpm build:runner
-# Inside deepseek-harness: rebuild Host/client bundle for `dsh plugin add`
+pnpm build:dsh      # Host + browser client bundle (needs ../deepseek-harness)
 ```
+
+`build:dsh` copies this repo into `deepseek-harness/packages/agent-kernel/mcp`, runs `tsc` + `tsdown` there, and syncs `lib/` back. Set `DSH_HARNESS_ROOT` if the harness checkout is not a sibling directory.

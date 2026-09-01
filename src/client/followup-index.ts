@@ -1,6 +1,6 @@
 /** Browser poll of Host Session ids with idle followup armed. */
 
-import { createSnapshotStore, type SnapshotStore } from '@deepseek-ai/dsh-client-runtime/client'
+import { createSnapshotStore, type SnapshotStore } from '@deepseek-ai/dsh-client-store'
 
 /** Snapshot: Session id → armed. */
 export interface FollowupIndexState {
