@@ -1,12 +1,12 @@
 /** Browser plugin: Agent Kernel Session Header + sidebar mark. */
 import type { ClientContext, SessionId } from '@deepseek-ai/dsh-client-runtime/client';
 import { AgentKernelHeaderController } from './controller.ts';
-import { NudgeIndexController } from './nudge-index.ts';
+import { FollowupIndexController } from './followup-index.ts';
 import { type AgentKernelHeaderKey } from './locales.ts';
 declare module '@deepseek-ai/cordis' {
     interface Context {
         agentKernelHeader: AgentKernelHeaderController;
-        nudgeIndex: NudgeIndexController;
+        followupIndex: FollowupIndexController;
     }
 }
 declare module '@deepseek-ai/dsh-client-ui-slots' {
@@ -24,7 +24,7 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
     }
 }
 export type { AgentKernelHeaderEntry, AgentKernelHeaderState } from './controller.ts';
-export type { NudgeIndexState } from './nudge-index.ts';
+export type { FollowupIndexState } from './followup-index.ts';
 export declare const inject: string[];
 export declare function apply(ctx: ClientContext): void;
 //# sourceMappingURL=index.d.ts.map

@@ -1,11 +1,12 @@
 {
   "name": "agent-kernel-mcp",
-  "version": "0.2.0",
-  "description": "Agent Kernel for DeepSeek Harness: MCP tools + Session Header connect/idle-nudge (installable DSH bundle).",
+  "version": "0.3.0",
+  "description": "Agent Kernel: DSH Header + outbound WSS + MCP; CLI runner for Claude/Aider/OpenCode.",
   "license": "MIT",
   "type": "module",
   "bin": {
-    "agent-kernel-mcp": "./dist/mcp/index.js"
+    "agent-kernel-mcp": "./dist/mcp/index.js",
+    "agent-kernel-runner": "./dist/runner/runner/index.js"
   },
   "main": "./lib/index.js",
   "types": "./lib/types/index.d.ts",
@@ -28,10 +29,13 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json && tsc -p tsconfig.host.json && tsdown",
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.runner.json",
     "build:mcp": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.host.json --noEmit",
+    "build:runner": "tsc -p tsconfig.runner.json",
+    "build:dsh": "tsc -p tsconfig.host.json && tsdown",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.runner.json --noEmit",
     "start": "node dist/mcp/index.js",
+    "start:runner": "node dist/runner/runner/index.js",
     "prepublishOnly": "pnpm run build"
   },
   "engines": {
@@ -45,10 +49,14 @@
     "mcp",
     "agent-kernel",
     "deepseek-harness",
-    "dsh-plugin"
+    "dsh-plugin",
+    "claude-code",
+    "aider",
+    "opencode"
   ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
+    "ws": "^8.21.3",
     "zod": "^3.24.2"
   },
   "peerDependencies": {
@@ -68,20 +76,9 @@
     "react": "^18.2.0"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "workspace:*",
-    "@deepseek-ai/dsh-agent": "workspace:*",
-    "@deepseek-ai/dsh-client-connection": "workspace:*",
-    "@deepseek-ai/dsh-client-locale": "workspace:*",
-    "@deepseek-ai/dsh-client-runtime": "workspace:*",
-    "@deepseek-ai/dsh-client-ui-conversation": "workspace:*",
-    "@deepseek-ai/dsh-client-ui-primitives": "workspace:*",
-    "@deepseek-ai/dsh-client-ui-slots": "workspace:*",
-    "@deepseek-ai/dsh-client-ui-workspace": "workspace:*",
-    "@deepseek-ai/dsh-host-webserver": "workspace:*",
-    "@deepseek-ai/dsh-llm": "workspace:*",
-    "@deepseek-ai/dsh-session": "workspace:*",
     "@types/node": "^22.13.10",
     "@types/react": "~18.3.1",
+    "@types/ws": "^8.18.1",
     "react": "^18.2.0",
     "tsdown": "^0.22.2",
     "tsx": "^4.19.3",

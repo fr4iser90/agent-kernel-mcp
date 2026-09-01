@@ -68,6 +68,19 @@
   font-size: 12px;
 }
 
+.wssOn {
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.wssOff {
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--dsw-alias-label-dimmed);
+  opacity: 0.85;
+}
+
 .footer {
   display: flex;
   flex-wrap: wrap;

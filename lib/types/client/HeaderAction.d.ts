@@ -16,8 +16,9 @@ export interface AgentKernelHeaderInjected {
         readonly kernelUrl?: string;
         readonly kernelToken?: string;
     }) => Promise<void>;
+    claimPair: (sessionId: SessionId, code: string, kernelUrl: string) => Promise<void>;
     setSettingsOpen: (sessionId: SessionId, open: boolean) => void;
 }
 export type AgentKernelHeaderProps = PropsRuntime<'conversation.session.header.utilities'> & PropsLocale<typeof NS> & InjectFace<AgentKernelHeaderInjected>;
-export declare function AgentKernelHeaderAction({ sessionId, useAgentKernelHeader, watch, unwatch, setEnabled, saveSettings, setSettingsOpen, t, }: AgentKernelHeaderProps): ReactNode;
+export declare function AgentKernelHeaderAction({ sessionId, useAgentKernelHeader, watch, unwatch, setEnabled, saveSettings, claimPair, setSettingsOpen, t, }: AgentKernelHeaderProps): ReactNode;
 //# sourceMappingURL=HeaderAction.d.ts.map

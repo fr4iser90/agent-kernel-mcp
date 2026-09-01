@@ -1,46 +1,61 @@
 # agent-kernel-mcp
 
-Installable **DeepSeek Harness** bundle: Session Header (Target URL / Token / idle nudge) + stdio **MCP** tools for [agent-kernel](https://github.com/fr4iser90/agent-kernel).
+One device package for **all** supported executors:
 
-Also works as a plain MCP server in VS Code / Cursor.
+| Piece | Role |
+|-------|------|
+| **`agent-kernel-runner pair`** | Same pairing for DSH / Claude / Aider / OpenCode → `connect.json` |
+| **`agent-kernel-runner`** | Outbound WSS — kernel pushes coding jobs |
+| **`agent-kernel-mcp` (stdio)** | Same MCP tools in Claude / Aider / OpenCode / DSH |
+| **DSH plugin** (optional) | Session Header UI + Host; still uses the same `connect.json` |
 
-## Install into DSH
-
-```bash
-dsh plugin --profile web add file:/absolute/path/to/agent-kernel-mcp
-# or: dsh plugin --profile web add github:fr4iser90/agent-kernel-mcp
-
-dsh web
+```text
+Pair (once) ──▶ connect.json ──▶ MCP tools (any client)
+                           └──▶ WSS runner (jobs → dsh | claude | aider | opencode)
 ```
 
-The bundle mounts:
+## Pair (identical everywhere)
 
-1. Agent Kernel host + client (Header slot `agent-kernel-nudge`)
-2. MCP server `agent_kernel` (`mcp__agent_kernel__ak_*`)
+```bash
+# Kernel UI → Generate pairing code, then:
+agent-kernel-runner pair --url https://YOUR_KERNEL --code ABCD-EFGH-IJKL
+agent-kernel-runner   # leave running
+```
 
-Open a session → Header **Agent Kernel** (checkbox + gear): Target URL, Token, idle message, duration. Saved under `$DSH_HOME/agent-kernel/connect.json`.
+Also writes `~/.dsh/agent-kernel/connect.json` and `~/.agent-kernel/connect.json`.
 
-## MCP tools
+DSH Session Header → Pair still works (same claim API).
 
-| Tool | Role |
-|------|------|
-| `ak_nudge` | Kernel assignment nudge |
-| `ak_scheduler_tick` | One scheduler pass |
-| `ak_attention` | Observability attention queue |
-| `ak_list_assignments` / `ak_list_runs` | Inspect schedule & outcomes |
+## MCP (same server, client-specific config)
 
-Env (optional — Header / `connect.json` can supply URL + token):
+```bash
+pnpm build:mcp
+bash examples/print-mcp-configs.sh
+```
 
-| Variable | Meaning |
-|----------|---------|
-| `AGENT_KERNEL_URL` | Control-plane base URL |
-| `AGENT_KERNEL_TOKEN` | `ak_session` / Bearer |
+| Client | Config |
+|--------|--------|
+| **Claude Code** | `.mcp.json` → `examples/claude.mcp.json` |
+| **OpenCode** | `opencode.json` → `examples/opencode.json` |
+| **Aider** | `--mcp-servers-file examples/aider.mcp.json` |
+| **DSH** | `dsh plugin --profile web add file:…` (cordis MCP entry) |
 
-## Build from source
+## Coding jobs
+
+`brief.executorId` on the device:
+
+| Id | Spawns |
+|----|--------|
+| `dsh` | DSH Host session RPC |
+| `claude-code` | `claude --print …` |
+| `aider` | `aider --message …` |
+| `opencode` | `opencode run --auto` |
+
+## Build
 
 ```bash
 pnpm install
-pnpm build
+pnpm build          # MCP + runner
+pnpm build:runner
+# Inside deepseek-harness: rebuild Host/client bundle for `dsh plugin add`
 ```
-
-Workspace copy (for peer resolve while developing against harness): `deepseek-harness/packages/agent-kernel/mcp`. Publishable tree: [agent-kernel-mcp](https://github.com/fr4iser90/agent-kernel-mcp).

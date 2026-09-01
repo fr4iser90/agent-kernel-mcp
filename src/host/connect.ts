@@ -1,6 +1,7 @@
 /**
- * Global agent-kernel connection for DSH Header + MCP stdio.
- * `$DSH_HOME/agent-kernel/connect.json`
+ * Global agent-kernel connection for DSH Header, MCP stdio, and standalone runner.
+ * Prefer `$AGENT_KERNEL_HOME/connect.json`, then `$DSH_HOME/agent-kernel/connect.json`,
+ * then `~/.dsh/agent-kernel/connect.json`, then `~/.agent-kernel/connect.json`.
  */
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import os from 'node:os'
@@ -12,10 +13,20 @@ export interface AgentKernelConnect {
   readonly updatedAt: string
 }
 
+function candidatePaths(): string[] {
+  const out: string[] = []
+  const ak = process.env.AGENT_KERNEL_HOME?.trim()
+  if (ak) out.push(path.join(ak, 'connect.json'))
+  const dsh = process.env.DSH_HOME?.trim()
+  if (dsh) out.push(path.join(dsh, 'agent-kernel', 'connect.json'))
+  out.push(path.join(os.homedir(), '.dsh', 'agent-kernel', 'connect.json'))
+  out.push(path.join(os.homedir(), '.agent-kernel', 'connect.json'))
+  return [...new Set(out)]
+}
+
+/** Default write path (DSH layout when available, else ~/.agent-kernel). */
 export function resolveAgentKernelConnectPath(): string {
-  const home = process.env.DSH_HOME?.trim()
-  const base = home !== undefined && home.length > 0 ? home : path.join(os.homedir(), '.dsh')
-  return path.join(base, 'agent-kernel', 'connect.json')
+  return candidatePaths()[0]!
 }
 
 export function emptyAgentKernelConnect(): AgentKernelConnect {
@@ -36,14 +47,20 @@ export function parseAgentKernelConnect(raw: string): AgentKernelConnect {
 }
 
 export async function readAgentKernelConnect(): Promise<AgentKernelConnect> {
-  try {
-    return parseAgentKernelConnect(await readFile(resolveAgentKernelConnectPath(), 'utf8'))
-  } catch (error: unknown) {
-    if (error instanceof Error && 'code' in error && (error as NodeJS.ErrnoException).code === 'ENOENT') {
-      return emptyAgentKernelConnect()
+  let lastErr: unknown
+  for (const file of candidatePaths()) {
+    try {
+      const parsed = parseAgentKernelConnect(await readFile(file, 'utf8'))
+      if (parsed.url || parsed.token) return parsed
+    } catch (error: unknown) {
+      if (error instanceof Error && 'code' in error && (error as NodeJS.ErrnoException).code === 'ENOENT') {
+        continue
+      }
+      lastErr = error
     }
-    throw error
   }
+  if (lastErr) throw lastErr
+  return emptyAgentKernelConnect()
 }
 
 export async function writeAgentKernelConnect(
@@ -62,8 +79,14 @@ export async function writeAgentKernelConnect(
     }
   }
   const state: AgentKernelConnect = { url, token, updatedAt: nowIso }
-  const file = resolveAgentKernelConnectPath()
-  await mkdir(path.dirname(file), { recursive: true })
-  await writeFile(file, `${JSON.stringify(state, null, 2)}\n`, 'utf8')
+  const body = `${JSON.stringify(state, null, 2)}\n`
+  // Write every known path so DSH Header, Claude/Aider/OpenCode MCP, and runner share state.
+  const written = new Set<string>()
+  for (const file of candidatePaths()) {
+    if (written.has(file)) continue
+    written.add(file)
+    await mkdir(path.dirname(file), { recursive: true })
+    await writeFile(file, body, 'utf8')
+  }
   return state
 }

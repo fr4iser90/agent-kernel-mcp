@@ -1,5 +1,5 @@
 /**
- * Agent Kernel DSH host plugin: Session Header connect + idle nudge.
+ * Agent Kernel DSH host plugin: Session Header connect + idle followup.
  */
 import type { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
@@ -7,21 +7,23 @@ import { boundContextSummary, createUserMessage } from '@deepseek-ai/dsh-llm'
 import type {} from '@deepseek-ai/dsh-host-webserver'
 import type {} from '@deepseek-ai/dsh-session'
 import {
-  DEFAULT_NUDGE_PROMPT,
-  expireNudgeIfNeeded,
-  isNudgeBudgetActive,
-  readSessionNudge,
-  recordNudgePoll,
-  recordNudgeWake,
-  resolveSessionNudgeRoot,
-  shouldWakeNudge,
-  writeSessionNudge,
-} from './nudge.ts'
+  DEFAULT_FOLLOWUP_PROMPT,
+  expireFollowupIfNeeded,
+  isFollowupBudgetActive,
+  readSessionFollowup,
+  recordFollowupPoll,
+  recordFollowupWake,
+  resolveSessionFollowupRoot,
+  shouldWakeFollowup,
+  writeSessionFollowup,
+} from './idle-followup.ts'
 import {
-  handleAgentKernelNudge,
-  handleAgentKernelNudgeIndex,
+  handleAgentKernelFollowup,
+  handleAgentKernelFollowupIndex,
+  handleAgentKernelPair,
   handleAgentKernelStatus,
 } from './http.ts'
+import { startExecutorWsClient } from './ws-client.ts'
 
 export const name = 'agent-kernel-mcp'
 export const inject = ['webServer', 'sessions']
@@ -50,15 +52,15 @@ function resolveConfig(config: Config): Resolved {
   }
 }
 
-function wakeNudge(agent: Agent, prompt: string): void {
-  const text = prompt.trim().length > 0 ? prompt.trim() : DEFAULT_NUDGE_PROMPT
+function wakeIdleFollowup(agent: Agent, prompt: string): void {
+  const text = prompt.trim().length > 0 ? prompt.trim() : DEFAULT_FOLLOWUP_PROMPT
   agent.followup(createUserMessage({
     content: [{ type: 'text', text }],
     source: {
       kind: 'plugin',
       plugin: name,
       form: 'notice',
-      summary: boundContextSummary('Agent Kernel idle nudge'),
+      summary: boundContextSummary('Agent Kernel idle followup'),
     },
   }))
 }
@@ -69,7 +71,7 @@ export function apply(ctx: Context, config: Config = {}): void {
   const limitsOf = () => ({
     trustedHosts: current().trustedHosts,
     pluginEnabled: current().enabled,
-    nudgeRoot: resolveSessionNudgeRoot(),
+    followupRoot: resolveSessionFollowupRoot(),
     watchdogIntervalMinutes: current().watchdogIntervalMinutes,
   })
 
@@ -81,15 +83,21 @@ export function apply(ctx: Context, config: Config = {}): void {
 
   ctx.effect(() => ctx.webServer.register({
     kind: 'exact',
-    path: '/api/agent-kernel.nudge',
-    handler: (req, res) => handleAgentKernelNudge(req, res, ctx.sessions, limitsOf()),
-  }), 'agent-kernel: nudge')
+    path: '/api/agent-kernel.followup',
+    handler: (req, res) => handleAgentKernelFollowup(req, res, ctx.sessions, limitsOf()),
+  }), 'agent-kernel: followup')
 
   ctx.effect(() => ctx.webServer.register({
     kind: 'exact',
-    path: '/api/agent-kernel.nudge-index',
-    handler: (req, res) => handleAgentKernelNudgeIndex(req, res, limitsOf()),
-  }), 'agent-kernel: nudge-index')
+    path: '/api/agent-kernel.pair',
+    handler: (req, res) => handleAgentKernelPair(req, res, limitsOf()),
+  }), 'agent-kernel: pair')
+
+  ctx.effect(() => ctx.webServer.register({
+    kind: 'exact',
+    path: '/api/agent-kernel.followup-index',
+    handler: (req, res) => handleAgentKernelFollowupIndex(req, res, limitsOf()),
+  }), 'agent-kernel: followup-index')
 
   const lastWakeAt = new Map<string, number>()
   const intervalMinutes = current().watchdogIntervalMinutes
@@ -102,42 +110,42 @@ export function apply(ctx: Context, config: Config = {}): void {
         const agents = ctx.get('agents')?.list() ?? []
         const nowMs = Date.now()
         const iso = new Date(nowMs).toISOString()
-        const nudgeRoot = resolveSessionNudgeRoot()
+        const followupRoot = resolveSessionFollowupRoot()
         for (const agent of agents) {
-          let nudge
+          let followup
           try {
-            nudge = await readSessionNudge(nudgeRoot, String(agent.id))
+            followup = await readSessionFollowup(followupRoot, String(agent.id))
           } catch {
             continue
           }
-          const expired = expireNudgeIfNeeded(nudge, nowMs, iso)
+          const expired = expireFollowupIfNeeded(followup, nowMs, iso)
           if (expired.expired) {
             try {
-              await writeSessionNudge(nudgeRoot, String(agent.id), expired.state)
+              await writeSessionFollowup(followupRoot, String(agent.id), expired.state)
             } catch {
               // ignore
             }
             continue
           }
-          if (!expired.state.enabled || !isNudgeBudgetActive(expired.state, nowMs)) continue
+          if (!expired.state.enabled || !isFollowupBudgetActive(expired.state, nowMs)) continue
           const agentKey = String(agent.id)
-          const polled = recordNudgePoll(expired.state, iso)
+          const polled = recordFollowupPoll(expired.state, iso)
           try {
-            await writeSessionNudge(nudgeRoot, agentKey, polled)
+            await writeSessionFollowup(followupRoot, agentKey, polled)
           } catch {
             // ignore
           }
-          if (!shouldWakeNudge(polled, agent.status, nowMs)) continue
+          if (!shouldWakeFollowup(polled, agent.status, nowMs)) continue
           const previous = lastWakeAt.get(agentKey) ?? 0
           if (nowMs - previous < intervalMs / 2) continue
           lastWakeAt.set(agentKey, nowMs)
-          const woken = recordNudgeWake(polled, iso)
+          const woken = recordFollowupWake(polled, iso)
           try {
-            await writeSessionNudge(nudgeRoot, agentKey, woken)
+            await writeSessionFollowup(followupRoot, agentKey, woken)
           } catch {
             // ignore
           }
-          wakeNudge(agent, woken.prompt)
+          wakeIdleFollowup(agent, woken.prompt)
         }
       })()
     }
@@ -146,5 +154,16 @@ export function apply(ctx: Context, config: Config = {}): void {
       clearInterval(timer)
       lastWakeAt.clear()
     }, 'agent-kernel: idle timer')
+  }
+
+  // Outbound control channel: persistent WSS to kernel (no HTTP job polling).
+  {
+    const stop = startExecutorWsClient({
+      deviceLabel: 'dsh-host',
+      enabled: () => current().enabled,
+    })
+    ctx.effect(() => () => {
+      stop()
+    }, 'agent-kernel: executor wss')
   }
 }

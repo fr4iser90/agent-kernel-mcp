@@ -1,0 +1,11 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "agent-kernel": {
+      "type": "local",
+      "command": ["node", "REPLACE_WITH_ABSOLUTE_PATH/agent-kernel-mcp/dist/mcp/index.js"],
+      "enabled": true,
+      "timeout": 30000
+    }
+  }
+}

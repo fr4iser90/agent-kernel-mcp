@@ -1,19 +1,19 @@
-/** Browser poll of Host Session ids with idle nudge armed. */
+/** Browser poll of Host Session ids with idle followup armed. */
 import { type SnapshotStore } from '@deepseek-ai/dsh-client-runtime/client';
 /** Snapshot: Session id → armed. */
-export interface NudgeIndexState {
+export interface FollowupIndexState {
     enabled: Record<string, true | undefined>;
     error: string | null;
 }
 type Fetch = (input: string | URL, init?: RequestInit) => Promise<Response>;
 /**
- * Poll `/api/agent-kernel.nudge-index` for Workspaces sidebar marks.
+ * Poll `/api/agent-kernel.followup-index` for Workspaces sidebar marks.
  */
-export declare class NudgeIndexController {
+export declare class FollowupIndexController {
     private readonly fetcher;
     private readonly pollMs;
     /** uSES-safe enabled-id map. */
-    readonly store: SnapshotStore<NudgeIndexState>;
+    readonly store: SnapshotStore<FollowupIndexState>;
     private timer;
     private disposed;
     /**
@@ -37,4 +37,4 @@ export declare class NudgeIndexController {
     dispose(): void;
 }
 export {};
-//# sourceMappingURL=nudge-index.d.ts.map
+//# sourceMappingURL=followup-index.d.ts.map

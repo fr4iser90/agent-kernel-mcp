@@ -1,5 +1,5 @@
 /**
- * Agent Kernel DSH host plugin: Session Header connect + idle nudge.
+ * Agent Kernel DSH host plugin: Session Header connect + idle followup.
  */
 import type { Context } from '@deepseek-ai/cordis';
 export declare const name = "agent-kernel-mcp";

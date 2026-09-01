@@ -1,0 +1,26 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist/runner",
+    "rootDir": "src",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+    "declaration": false,
+    "skipLibCheck": true,
+    "types": ["node"]
+  },
+  "include": [
+    "src/runner/index.ts",
+    "src/host/ws-client.ts",
+    "src/host/ws-protocol.ts",
+    "src/host/connect.ts",
+    "src/host/pair.ts",
+    "src/host/detect-workdirs.ts",
+    "src/host/jobs.ts",
+    "src/host/cli-runners.ts",
+    "src/host/cli-sessions.ts",
+    "src/host/local-rpc.ts"
+  ]
+}

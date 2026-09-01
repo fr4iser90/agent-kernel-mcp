@@ -1,16 +1,16 @@
-/** Browser poll of Host Session ids with idle nudge armed. */
+/** Browser poll of Host Session ids with idle followup armed. */
 
 import { createSnapshotStore, type SnapshotStore } from '@deepseek-ai/dsh-client-runtime/client'
 
 /** Snapshot: Session id → armed. */
-export interface NudgeIndexState {
+export interface FollowupIndexState {
   enabled: Record<string, true | undefined>
   error: string | null
 }
 
 type Fetch = (input: string | URL, init?: RequestInit) => Promise<Response>
 
-const INITIAL: NudgeIndexState = { enabled: {}, error: null }
+const INITIAL: FollowupIndexState = { enabled: {}, error: null }
 
 function hostBase(): string {
   const origin = (globalThis as { location?: { origin?: string } }).location?.origin
@@ -23,11 +23,11 @@ function messageOf(error: unknown): string {
 }
 
 /**
- * Poll `/api/agent-kernel.nudge-index` for Workspaces sidebar marks.
+ * Poll `/api/agent-kernel.followup-index` for Workspaces sidebar marks.
  */
-export class NudgeIndexController {
+export class FollowupIndexController {
   /** uSES-safe enabled-id map. */
-  readonly store: SnapshotStore<NudgeIndexState> = createSnapshotStore(INITIAL)
+  readonly store: SnapshotStore<FollowupIndexState> = createSnapshotStore(INITIAL)
 
   private timer: ReturnType<typeof setInterval> | undefined
   private disposed = false
@@ -82,11 +82,11 @@ export class NudgeIndexController {
     /* v8 ignore next -- dispose races */
     if (this.disposed) return
     try {
-      const response = await this.fetcher(new URL('/api/agent-kernel.nudge-index', hostBase()), { method: 'GET' })
+      const response = await this.fetcher(new URL('/api/agent-kernel.followup-index', hostBase()), { method: 'GET' })
       if (!response.ok) {
         /* v8 ignore next -- text() rarely rejects */
         const detail = await response.text().catch(() => '')
-        throw new Error(`Nudge index failed: HTTP ${String(response.status)}${detail === '' ? '' : ` ${detail}`}`)
+        throw new Error(`Followup index failed: HTTP ${String(response.status)}${detail === '' ? '' : ` ${detail}`}`)
       }
       const body = await response.json() as { enabled?: unknown }
       const list = Array.isArray(body.enabled) ? body.enabled : []

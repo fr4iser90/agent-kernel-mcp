@@ -1,8 +1,8 @@
 /**
- * Per-Session idle nudge: opt-in flag, followup prompt, and optional hour budget
+ * Per-Session idle followup: opt-in flag, followup prompt, and optional hour budget
  * under `$DSH_HOME`. Independent of autonomy `state.json` so Header can arm
  * without `/autonomy start`.
- * @module @deepseek-ai/dsh-tool-autonomy/nudge
+ * @module agent-kernel-mcp/idle-followup
  */
 
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
@@ -10,16 +10,16 @@ import os from 'node:os'
 import path from 'node:path'
 
 /** Default followup text when the operator leaves the prompt empty. */
-export const DEFAULT_NUDGE_PROMPT = 'Continue'
+export const DEFAULT_FOLLOWUP_PROMPT = 'Continue'
 
-/** Max UTF-8 code units accepted for a custom nudge prompt. */
-export const MAX_NUDGE_PROMPT_CHARS = 8_000
+/** Max UTF-8 code units accepted for a custom followup prompt. */
+export const MAX_FOLLOWUP_PROMPT_CHARS = 8_000
 
-/** Max Session nudge window in hours (30 days). `0` means forever. */
-export const MAX_NUDGE_ACTIVE_HOURS = 720
+/** Max Session followup window in hours (30 days). `0` means forever. */
+export const MAX_FOLLOWUP_ACTIVE_HOURS = 720
 
-/** Durable per-Session nudge record. */
-export interface SessionNudgeState {
+/** Durable per-Session followup record. */
+export interface SessionFollowupState {
   readonly enabled: boolean
   readonly prompt: string
   /** Hour budget while armed; `0` = forever. */
@@ -34,14 +34,14 @@ export interface SessionNudgeState {
 }
 
 /**
- * Resolve the directory that holds `session-nudge/<sessionId>.json`.
+ * Resolve the directory that holds `session-followup/<sessionId>.json`.
  * Prefers `$DSH_HOME`, else `~/.dsh`.
- * @returns absolute nudge root directory.
+ * @returns absolute followup root directory.
  */
-export function resolveSessionNudgeRoot(): string {
+export function resolveSessionFollowupRoot(): string {
   const home = process.env.DSH_HOME?.trim()
   const base = home !== undefined && home.length > 0 ? home : path.join(os.homedir(), '.dsh')
-  return path.join(base, 'session-nudge')
+  return path.join(base, 'session-followup')
 }
 
 /**
@@ -49,32 +49,32 @@ export function resolveSessionNudgeRoot(): string {
  * @param sessionId - Session id string.
  * @returns the same id when valid.
  */
-export function assertNudgeSessionId(sessionId: string): string {
+export function assertFollowupSessionId(sessionId: string): string {
   if (!/^[A-Za-z0-9._-]{1,200}$/u.test(sessionId)) {
-    throw new Error('sessionId is not a safe nudge filename')
+    throw new Error('sessionId is not a safe followup filename')
   }
   return sessionId
 }
 
 /**
- * Absolute path for one Session's nudge file.
- * @param nudgeRoot - directory from {@link resolveSessionNudgeRoot}.
+ * Absolute path for one Session's followup file.
+ * @param followupRoot - directory from {@link resolveSessionFollowupRoot}.
  * @param sessionId - Session id.
  */
-export function resolveNudgePath(nudgeRoot: string, sessionId: string): string {
-  return path.join(nudgeRoot, `${assertNudgeSessionId(sessionId)}.json`)
+export function resolveFollowupPath(followupRoot: string, sessionId: string): string {
+  return path.join(followupRoot, `${assertFollowupSessionId(sessionId)}.json`)
 }
 
 /**
  * Normalize prompt text; empty → default Continue.
  * @param raw - operator input.
- * @returns trimmed prompt or {@link DEFAULT_NUDGE_PROMPT}.
+ * @returns trimmed prompt or {@link DEFAULT_FOLLOWUP_PROMPT}.
  */
-export function normalizeNudgePrompt(raw: string): string {
+export function normalizeFollowupPrompt(raw: string): string {
   const trimmed = raw.trim()
-  if (trimmed.length === 0) return DEFAULT_NUDGE_PROMPT
-  if (trimmed.length > MAX_NUDGE_PROMPT_CHARS) {
-    throw new Error(`nudge prompt exceeds ${String(MAX_NUDGE_PROMPT_CHARS)} characters`)
+  if (trimmed.length === 0) return DEFAULT_FOLLOWUP_PROMPT
+  if (trimmed.length > MAX_FOLLOWUP_PROMPT_CHARS) {
+    throw new Error(`followup prompt exceeds ${String(MAX_FOLLOWUP_PROMPT_CHARS)} characters`)
   }
   return trimmed
 }
@@ -84,21 +84,21 @@ export function normalizeNudgePrompt(raw: string): string {
  * @param raw - operator input.
  * @returns sanitized hour count.
  */
-export function normalizeNudgeActiveHours(raw: number): number {
-  if (!Number.isSafeInteger(raw) || raw < 0 || raw > MAX_NUDGE_ACTIVE_HOURS) {
-    throw new Error(`nudge activeHours must be an integer from 0 to ${String(MAX_NUDGE_ACTIVE_HOURS)}`)
+export function normalizeFollowupActiveHours(raw: number): number {
+  if (!Number.isSafeInteger(raw) || raw < 0 || raw > MAX_FOLLOWUP_ACTIVE_HOURS) {
+    throw new Error(`followup activeHours must be an integer from 0 to ${String(MAX_FOLLOWUP_ACTIVE_HOURS)}`)
   }
   return raw
 }
 
 /**
- * Default in-memory nudge when no file exists.
+ * Default in-memory followup when no file exists.
  * @returns disabled Continue record with empty timestamps.
  */
-export function emptyNudgeState(): SessionNudgeState {
+export function emptyFollowupState(): SessionFollowupState {
   return {
     enabled: false,
-    prompt: DEFAULT_NUDGE_PROMPT,
+    prompt: DEFAULT_FOLLOWUP_PROMPT,
     activeHours: 0,
     armedAt: '',
     lastPolledAt: '',
@@ -108,25 +108,25 @@ export function emptyNudgeState(): SessionNudgeState {
 }
 
 /**
- * Parse a JSON nudge record; invalid shapes throw.
+ * Parse a JSON followup record; invalid shapes throw.
  * @param raw - file UTF-8 contents.
- * @returns durable nudge state.
+ * @returns durable followup state.
  */
-export function parseNudgeState(raw: string): SessionNudgeState {
+export function parseFollowupState(raw: string): SessionFollowupState {
   const parsed: unknown = JSON.parse(raw)
   if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error('nudge state must be a JSON object')
+    throw new Error('followup state must be a JSON object')
   }
   const record = parsed as Record<string, unknown>
   const enabled = record['enabled'] === true
-  const promptRaw = typeof record['prompt'] === 'string' ? record['prompt'] : DEFAULT_NUDGE_PROMPT
-  const prompt = normalizeNudgePrompt(promptRaw)
+  const promptRaw = typeof record['prompt'] === 'string' ? record['prompt'] : DEFAULT_FOLLOWUP_PROMPT
+  const prompt = normalizeFollowupPrompt(promptRaw)
   const hoursRaw = record['activeHours']
   const activeHours = hoursRaw === undefined
     ? 0
     : typeof hoursRaw === 'number'
-      ? normalizeNudgeActiveHours(hoursRaw)
-      : (() => { throw new Error('nudge state activeHours must be a number') })()
+      ? normalizeFollowupActiveHours(hoursRaw)
+      : (() => { throw new Error('followup state activeHours must be a number') })()
   const armedAt = typeof record['armedAt'] === 'string' ? record['armedAt'] : ''
   const lastPolledAt = typeof record['lastPolledAt'] === 'string' ? record['lastPolledAt'] : ''
   const lastWakeAt = typeof record['lastWakeAt'] === 'string' ? record['lastWakeAt'] : ''
@@ -135,56 +135,56 @@ export function parseNudgeState(raw: string): SessionNudgeState {
 }
 
 /**
- * Read nudge state for a Session; missing file → empty defaults.
- * @param nudgeRoot - storage directory.
+ * Read followup state for a Session; missing file → empty defaults.
+ * @param followupRoot - storage directory.
  * @param sessionId - Session id.
  */
-export async function readSessionNudge(
-  nudgeRoot: string,
+export async function readSessionFollowup(
+  followupRoot: string,
   sessionId: string,
-): Promise<SessionNudgeState> {
-  const file = resolveNudgePath(nudgeRoot, sessionId)
+): Promise<SessionFollowupState> {
+  const file = resolveFollowupPath(followupRoot, sessionId)
   let raw: string
   try {
     raw = await readFile(file, 'utf8')
   } catch (error: unknown) {
     if (error instanceof Error && 'code' in error && (error as NodeJS.ErrnoException).code === 'ENOENT') {
-      return emptyNudgeState()
+      return emptyFollowupState()
     }
     throw error
   }
-  return parseNudgeState(raw)
+  return parseFollowupState(raw)
 }
 
 /**
- * Persist nudge state for a Session.
- * @param nudgeRoot - storage directory.
+ * Persist followup state for a Session.
+ * @param followupRoot - storage directory.
  * @param sessionId - Session id.
  * @param state - next record.
  */
-export async function writeSessionNudge(
-  nudgeRoot: string,
+export async function writeSessionFollowup(
+  followupRoot: string,
   sessionId: string,
-  state: SessionNudgeState,
+  state: SessionFollowupState,
 ): Promise<void> {
-  const file = resolveNudgePath(nudgeRoot, sessionId)
-  await mkdir(nudgeRoot, { recursive: true })
+  const file = resolveFollowupPath(followupRoot, sessionId)
+  await mkdir(followupRoot, { recursive: true })
   await writeFile(file, `${JSON.stringify(state, null, 2)}\n`, 'utf8')
 }
 
 /**
- * Session ids whose durable nudge file is currently enabled (and budget-active).
+ * Session ids whose durable followup file is currently enabled (and budget-active).
  * Corrupt or unsafe filenames are skipped so one bad file cannot break the index.
- * @param nudgeRoot - directory from {@link resolveSessionNudgeRoot}.
+ * @param followupRoot - directory from {@link resolveSessionFollowupRoot}.
  * @param nowMs - evaluation clock for hour-budget expiry.
  */
-export async function listEnabledNudgeSessionIds(
-  nudgeRoot: string,
+export async function listEnabledFollowupSessionIds(
+  followupRoot: string,
   nowMs: number = Date.now(),
 ): Promise<readonly string[]> {
   let names: string[]
   try {
-    names = await readdir(nudgeRoot)
+    names = await readdir(followupRoot)
   } catch (error: unknown) {
     if (error instanceof Error && 'code' in error && (error as NodeJS.ErrnoException).code === 'ENOENT') {
       return []
@@ -197,17 +197,17 @@ export async function listEnabledNudgeSessionIds(
     if (!name.endsWith('.json')) continue
     const sessionId = name.slice(0, -'.json'.length)
     try {
-      assertNudgeSessionId(sessionId)
+      assertFollowupSessionId(sessionId)
     } catch {
       continue
     }
-    let state: SessionNudgeState
+    let state: SessionFollowupState
     try {
-      state = parseNudgeState(await readFile(resolveNudgePath(nudgeRoot, sessionId), 'utf8'))
+      state = parseFollowupState(await readFile(resolveFollowupPath(followupRoot, sessionId), 'utf8'))
     } catch {
       continue
     }
-    const { state: live, expired } = expireNudgeIfNeeded(state, nowMs, iso)
+    const { state: live, expired } = expireFollowupIfNeeded(state, nowMs, iso)
     if (expired || !live.enabled) continue
     enabled.push(sessionId)
   }
@@ -216,10 +216,10 @@ export async function listEnabledNudgeSessionIds(
 
 /**
  * Remaining ms in a limited arm window; `Infinity` when forever; `0` when expired/off.
- * @param state - durable nudge.
+ * @param state - durable followup.
  * @param nowMs - evaluation clock.
  */
-export function nudgeRemainingMs(state: SessionNudgeState, nowMs: number): number {
+export function followupRemainingMs(state: SessionFollowupState, nowMs: number): number {
   if (!state.enabled) return 0
   if (state.activeHours <= 0) return Number.POSITIVE_INFINITY
   if (state.armedAt.length === 0) return 0
@@ -231,27 +231,27 @@ export function nudgeRemainingMs(state: SessionNudgeState, nowMs: number): numbe
 
 /**
  * Whether the arm window is still open.
- * @param state - durable nudge.
+ * @param state - durable followup.
  * @param nowMs - evaluation clock.
  */
-export function isNudgeBudgetActive(state: SessionNudgeState, nowMs: number): boolean {
-  const remaining = nudgeRemainingMs(state, nowMs)
+export function isFollowupBudgetActive(state: SessionFollowupState, nowMs: number): boolean {
+  const remaining = followupRemainingMs(state, nowMs)
   return remaining === Number.POSITIVE_INFINITY || remaining > 0
 }
 
 /**
- * Disable a timed-out nudge; no-op when still active or already off.
- * @param state - durable nudge.
+ * Disable a timed-out followup; no-op when still active or already off.
+ * @param state - durable followup.
  * @param nowMs - evaluation clock.
  * @param nowIso - write timestamp when expiring.
  * @returns next state and whether an expiry write is needed.
  */
-export function expireNudgeIfNeeded(
-  state: SessionNudgeState,
+export function expireFollowupIfNeeded(
+  state: SessionFollowupState,
   nowMs: number,
   nowIso: string,
-): { readonly state: SessionNudgeState; readonly expired: boolean } {
-  if (!state.enabled || isNudgeBudgetActive(state, nowMs)) {
+): { readonly state: SessionFollowupState; readonly expired: boolean } {
+  if (!state.enabled || isFollowupBudgetActive(state, nowMs)) {
     return { state, expired: false }
   }
   return {
@@ -268,43 +268,43 @@ export function expireNudgeIfNeeded(
 }
 
 /**
- * Whether the Host timer should post a nudge followup.
- * @param state - durable nudge (caller should expire first).
+ * Whether the Host timer should post an idle followup.
+ * @param state - durable followup (caller should expire first).
  * @param agentStatus - live agent status (`idle` only).
  * @param nowMs - evaluation clock.
  */
-export function shouldWakeNudge(
-  state: SessionNudgeState,
+export function shouldWakeFollowup(
+  state: SessionFollowupState,
   agentStatus: 'idle' | 'running' | string,
   nowMs: number,
 ): boolean {
-  return state.enabled && agentStatus === 'idle' && isNudgeBudgetActive(state, nowMs)
+  return state.enabled && agentStatus === 'idle' && isFollowupBudgetActive(state, nowMs)
 }
 
 /**
- * Merge a partial update into the durable nudge record.
+ * Merge a partial update into the durable followup record.
  * @param previous - current state.
  * @param patch - fields to change.
  * @param nowIso - write timestamp (also used as `armedAt` when arming).
  * @returns next state.
  */
-export function patchSessionNudge(
-  previous: SessionNudgeState,
+export function patchSessionFollowup(
+  previous: SessionFollowupState,
   patch: {
     readonly enabled?: boolean
     readonly prompt?: string
     readonly activeHours?: number
   },
   nowIso: string,
-): SessionNudgeState {
+): SessionFollowupState {
   if (patch.enabled === undefined && patch.prompt === undefined && patch.activeHours === undefined) {
-    throw new Error('nudge patch requires enabled, prompt, and/or activeHours')
+    throw new Error('followup patch requires enabled, prompt, and/or activeHours')
   }
   const enabled = patch.enabled ?? previous.enabled
   const activeHours = patch.activeHours !== undefined
-    ? normalizeNudgeActiveHours(patch.activeHours)
+    ? normalizeFollowupActiveHours(patch.activeHours)
     : previous.activeHours
-  const prompt = patch.prompt !== undefined ? normalizeNudgePrompt(patch.prompt) : previous.prompt
+  const prompt = patch.prompt !== undefined ? normalizeFollowupPrompt(patch.prompt) : previous.prompt
   let armedAt = previous.armedAt
   let lastPolledAt = previous.lastPolledAt
   let lastWakeAt = previous.lastWakeAt
@@ -334,20 +334,20 @@ export function patchSessionNudge(
 }
 
 /**
- * Mark that the Host timer just evaluated this Session for an idle nudge.
+ * Mark that the Host timer just evaluated this Session for an idle followup.
  * @param state - current armed state.
  * @param nowIso - poll timestamp.
  */
-export function recordNudgePoll(state: SessionNudgeState, nowIso: string): SessionNudgeState {
+export function recordFollowupPoll(state: SessionFollowupState, nowIso: string): SessionFollowupState {
   return { ...state, lastPolledAt: nowIso, updatedAt: nowIso }
 }
 
 /**
- * Mark that this Session just received an idle nudge followup.
+ * Mark that this Session just received an idle followup.
  * @param state - current armed state.
  * @param nowIso - wake timestamp.
  */
-export function recordNudgeWake(state: SessionNudgeState, nowIso: string): SessionNudgeState {
+export function recordFollowupWake(state: SessionFollowupState, nowIso: string): SessionFollowupState {
   return { ...state, lastPolledAt: nowIso, lastWakeAt: nowIso, updatedAt: nowIso }
 }
 
@@ -356,13 +356,13 @@ export function recordNudgeWake(state: SessionNudgeState, nowIso: string): Sessi
  * Cycles on the full poll interval from `lastPolledAt` (else `armedAt`) so the
  * Header never sticks at overdue after the first window elapses. After a wake,
  * the in-memory anti-spam half-interval still applies before another followup.
- * @param state - durable nudge.
+ * @param state - durable followup.
  * @param intervalMinutes - Host poll interval (`watchdogIntervalMinutes`).
  * @param nowMs - evaluation clock.
  * @returns remaining ms in `(0, intervalMs]`, or `null` when not armed / interval off.
  */
-export function nudgeNextCheckRemainingMs(
-  state: SessionNudgeState,
+export function followupNextCheckRemainingMs(
+  state: SessionFollowupState,
   intervalMinutes: number,
   nowMs: number,
 ): number | null {

@@ -2,9 +2,9 @@ import { useEffect, useState, type ReactNode } from 'react'
 import type { ObservableSnapshot, SessionId } from '@deepseek-ai/dsh-client-runtime/client'
 import { Button, IconSettingsOutline14, Modal } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
-import { MAX_NUDGE_ACTIVE_HOURS, nudgeNextCheckRemainingMs } from '../host/nudge.ts'
+import { MAX_FOLLOWUP_ACTIVE_HOURS, followupNextCheckRemainingMs } from '../host/idle-followup.ts'
 import type { AgentKernelHeaderState } from './controller.ts'
-import { formatNudgeCountdownLabel, formatNudgeNextCheckLabel } from './format.ts'
+import { formatFollowupCountdownLabel, formatFollowupNextCheckLabel } from './format.ts'
 import { NS } from './locales.ts'
 import css from './HeaderAction.module.css'
 
@@ -22,6 +22,7 @@ export interface AgentKernelHeaderInjected {
       readonly kernelToken?: string
     },
   ) => Promise<void>
+  claimPair: (sessionId: SessionId, code: string, kernelUrl: string) => Promise<void>
   setSettingsOpen: (sessionId: SessionId, open: boolean) => void
 }
 
@@ -37,6 +38,7 @@ export function AgentKernelHeaderAction({
   unwatch,
   setEnabled,
   saveSettings,
+  claimPair,
   setSettingsOpen,
   t,
 }: AgentKernelHeaderProps): ReactNode {
@@ -47,6 +49,7 @@ export function AgentKernelHeaderAction({
   const [draftHours, setDraftHours] = useState('8')
   const [draftUrl, setDraftUrl] = useState('')
   const [draftToken, setDraftToken] = useState('')
+  const [draftPairCode, setDraftPairCode] = useState('')
 
   useEffect(() => {
     watch(sessionId)
@@ -62,34 +65,34 @@ export function AgentKernelHeaderAction({
 
   const busy = entry?.busy === true
   const settingsOpen = entry?.settingsOpen === true
-  const savedPrompt = entry?.nudgePrompt ?? 'Continue'
-  const savedHours = entry?.nudgeActiveHours ?? 0
+  const savedPrompt = entry?.followupPrompt ?? 'Continue'
+  const savedHours = entry?.followupActiveHours ?? 0
   const savedUrl = entry?.kernelUrl ?? ''
   const savedToken = entry?.kernelToken ?? ''
-  const nextCheck = formatNudgeNextCheckLabel(
+  const nextCheck = formatFollowupNextCheckLabel(
     enabled
-      ? nudgeNextCheckRemainingMs(
+      ? followupNextCheckRemainingMs(
         {
           enabled: true,
           prompt: savedPrompt,
           activeHours: savedHours,
-          armedAt: entry?.nudgeArmedAt ?? '',
-          lastPolledAt: entry?.nudgeLastPolledAt ?? '',
-          lastWakeAt: entry?.nudgeLastWakeAt ?? '',
+          armedAt: entry?.followupArmedAt ?? '',
+          lastPolledAt: entry?.followupLastPolledAt ?? '',
+          lastWakeAt: entry?.followupLastWakeAt ?? '',
           updatedAt: '',
         },
         entry?.watchdogIntervalMinutes ?? 5,
         nowMs,
       )
       : null,
-    t('nudge.nextSoon'),
+    t('followup.nextSoon'),
   )
-  const nudgeClock = formatNudgeCountdownLabel(
+  const followupClock = formatFollowupCountdownLabel(
     enabled,
-    entry?.nudgeArmedAt ?? '',
+    entry?.followupArmedAt ?? '',
     savedHours,
     nowMs,
-    t('nudge.forever'),
+    t('followup.forever'),
   )
 
   useEffect(() => {
@@ -117,6 +120,12 @@ export function AgentKernelHeaderAction({
           />
           <span>{t('watchdog.label')}</span>
         </label>
+        <span
+          className={entry?.wssConnected ? css.wssOn : css.wssOff}
+          title={entry?.wssLastError ?? (entry?.wssConnected ? t('wss.connected') : t('wss.disconnected'))}
+        >
+          {entry?.wssConnected ? t('wss.connected') : t('wss.disconnected')}
+        </span>
         <button
           type="button"
           className={css.gear}
@@ -129,8 +138,8 @@ export function AgentKernelHeaderAction({
         {nextCheck.length > 0 ? (
           <span className={css.time} aria-live="polite">{nextCheck}</span>
         ) : null}
-        {nudgeClock.length > 0 ? (
-          <span className={css.timeSecondary} aria-live="polite">{nudgeClock}</span>
+        {followupClock.length > 0 ? (
+          <span className={css.timeSecondary} aria-live="polite">{followupClock}</span>
         ) : null}
       </div>
       <Modal
@@ -151,7 +160,7 @@ export function AgentKernelHeaderAction({
                 void (async () => {
                   const hours = draftForever
                     ? 0
-                    : Math.min(MAX_NUDGE_ACTIVE_HOURS, Math.max(1, Math.trunc(Number(draftHours)) || 1))
+                    : Math.min(MAX_FOLLOWUP_ACTIVE_HOURS, Math.max(1, Math.trunc(Number(draftHours)) || 1))
                   await saveSettings(sessionId, {
                     prompt: draftPrompt,
                     activeHours: hours,
@@ -179,6 +188,35 @@ export function AgentKernelHeaderAction({
             aria-label={t('dialog.targetLabel')}
             onChange={(event) => { setDraftUrl(event.target.value) }}
           />
+        </label>
+        <label className={css.promptField}>
+          <span className={css.promptLabel}>{t('dialog.pairCodeLabel')}</span>
+          <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
+            <input
+              className={css.hoursInput}
+              style={{ flex: 1 }}
+              type="text"
+              autoComplete="off"
+              spellCheck={false}
+              value={draftPairCode}
+              disabled={busy}
+              placeholder="WD4K-9F2M"
+              aria-label={t('dialog.pairCodeLabel')}
+              onChange={(event) => { setDraftPairCode(event.target.value.toUpperCase()) }}
+            />
+            <Button
+              variant="outline"
+              disabled={busy || draftPairCode.trim().length === 0 || draftUrl.trim().length === 0}
+              onClick={() => {
+                void (async () => {
+                  await claimPair(sessionId, draftPairCode.trim(), draftUrl.trim())
+                  setDraftPairCode('')
+                })()
+              }}
+            >
+              {t('dialog.pair')}
+            </Button>
+          </div>
         </label>
         <label className={css.promptField}>
           <span className={css.promptLabel}>{t('dialog.tokenLabel')}</span>
@@ -209,7 +247,7 @@ export function AgentKernelHeaderAction({
           <label className={css.radioRow}>
             <input
               type="radio"
-              name={`ak-nudge-duration-${String(sessionId)}`}
+              name={`ak-followup-duration-${String(sessionId)}`}
               checked={draftForever}
               onChange={() => { setDraftForever(true) }}
             />
@@ -218,7 +256,7 @@ export function AgentKernelHeaderAction({
           <label className={css.radioRow}>
             <input
               type="radio"
-              name={`ak-nudge-duration-${String(sessionId)}`}
+              name={`ak-followup-duration-${String(sessionId)}`}
               checked={!draftForever}
               onChange={() => { setDraftForever(false) }}
             />
@@ -231,7 +269,7 @@ export function AgentKernelHeaderAction({
                 className={css.hoursInput}
                 type="number"
                 min={1}
-                max={MAX_NUDGE_ACTIVE_HOURS}
+                max={MAX_FOLLOWUP_ACTIVE_HOURS}
                 step={1}
                 value={draftHours}
                 aria-label={t('dialog.hoursLabel')}

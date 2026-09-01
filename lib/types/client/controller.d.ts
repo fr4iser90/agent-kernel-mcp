@@ -2,11 +2,11 @@
 import { type SessionId, type SnapshotStore } from '@deepseek-ai/dsh-client-runtime/client';
 export interface AgentKernelHeaderEntry {
     readonly watchdogEnabled: boolean;
-    readonly nudgePrompt: string;
-    readonly nudgeActiveHours: number;
-    readonly nudgeArmedAt: string;
-    readonly nudgeLastPolledAt: string;
-    readonly nudgeLastWakeAt: string;
+    readonly followupPrompt: string;
+    readonly followupActiveHours: number;
+    readonly followupArmedAt: string;
+    readonly followupLastPolledAt: string;
+    readonly followupLastWakeAt: string;
     readonly watchdogIntervalMinutes: number;
     readonly pluginEnabled: boolean;
     readonly kernelUrl: string;
@@ -38,6 +38,7 @@ export declare class AgentKernelHeaderController {
         readonly kernelUrl?: string;
         readonly kernelToken?: string;
     }): Promise<void>;
+    claimPair(sessionId: SessionId, code: string, kernelUrl: string): Promise<void>;
     dispose(): Promise<void>;
     private patch;
     private publish;

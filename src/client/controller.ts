@@ -1,20 +1,22 @@
 /** Browser state for Agent Kernel Session Header. */
 
 import { createSnapshotStore, type SessionId, type SnapshotStore } from '@deepseek-ai/dsh-client-runtime/client'
-import { DEFAULT_NUDGE_PROMPT } from '../host/nudge.ts'
+import { DEFAULT_FOLLOWUP_PROMPT } from '../host/idle-followup.ts'
 
 export interface AgentKernelHeaderEntry {
   readonly watchdogEnabled: boolean
-  readonly nudgePrompt: string
-  readonly nudgeActiveHours: number
-  readonly nudgeArmedAt: string
-  readonly nudgeLastPolledAt: string
-  readonly nudgeLastWakeAt: string
+  readonly followupPrompt: string
+  readonly followupActiveHours: number
+  readonly followupArmedAt: string
+  readonly followupLastPolledAt: string
+  readonly followupLastWakeAt: string
   readonly watchdogIntervalMinutes: number
   readonly pluginEnabled: boolean
   readonly kernelUrl: string
   readonly kernelToken: string
   readonly kernelConnected: boolean
+  readonly wssConnected: boolean
+  readonly wssLastError: string | null
   readonly error: string | null
   readonly busy: boolean
   readonly settingsOpen: boolean
@@ -30,16 +32,18 @@ const INITIAL: AgentKernelHeaderState = { bySession: {} }
 
 const EMPTY: AgentKernelHeaderEntry = {
   watchdogEnabled: false,
-  nudgePrompt: DEFAULT_NUDGE_PROMPT,
-  nudgeActiveHours: 0,
-  nudgeArmedAt: '',
-  nudgeLastPolledAt: '',
-  nudgeLastWakeAt: '',
+  followupPrompt: DEFAULT_FOLLOWUP_PROMPT,
+  followupActiveHours: 0,
+  followupArmedAt: '',
+  followupLastPolledAt: '',
+  followupLastWakeAt: '',
   watchdogIntervalMinutes: 5,
   pluginEnabled: true,
   kernelUrl: '',
   kernelToken: '',
   kernelConnected: false,
+  wssConnected: false,
+  wssLastError: null,
   error: null,
   busy: false,
   settingsOpen: false,
@@ -57,15 +61,15 @@ function messageOf(error: unknown): string {
 function parseEntry(body: Partial<AgentKernelHeaderEntry>, settingsOpen: boolean): AgentKernelHeaderEntry {
   return {
     watchdogEnabled: body.watchdogEnabled === true,
-    nudgePrompt: typeof body.nudgePrompt === 'string' && body.nudgePrompt.trim().length > 0
-      ? body.nudgePrompt
-      : DEFAULT_NUDGE_PROMPT,
-    nudgeActiveHours: typeof body.nudgeActiveHours === 'number' && Number.isSafeInteger(body.nudgeActiveHours)
-      ? Math.max(0, body.nudgeActiveHours)
+    followupPrompt: typeof body.followupPrompt === 'string' && body.followupPrompt.trim().length > 0
+      ? body.followupPrompt
+      : DEFAULT_FOLLOWUP_PROMPT,
+    followupActiveHours: typeof body.followupActiveHours === 'number' && Number.isSafeInteger(body.followupActiveHours)
+      ? Math.max(0, body.followupActiveHours)
       : 0,
-    nudgeArmedAt: typeof body.nudgeArmedAt === 'string' ? body.nudgeArmedAt : '',
-    nudgeLastPolledAt: typeof body.nudgeLastPolledAt === 'string' ? body.nudgeLastPolledAt : '',
-    nudgeLastWakeAt: typeof body.nudgeLastWakeAt === 'string' ? body.nudgeLastWakeAt : '',
+    followupArmedAt: typeof body.followupArmedAt === 'string' ? body.followupArmedAt : '',
+    followupLastPolledAt: typeof body.followupLastPolledAt === 'string' ? body.followupLastPolledAt : '',
+    followupLastWakeAt: typeof body.followupLastWakeAt === 'string' ? body.followupLastWakeAt : '',
     watchdogIntervalMinutes:
       typeof body.watchdogIntervalMinutes === 'number' && Number.isSafeInteger(body.watchdogIntervalMinutes)
         ? Math.max(0, body.watchdogIntervalMinutes)
@@ -73,9 +77,9 @@ function parseEntry(body: Partial<AgentKernelHeaderEntry>, settingsOpen: boolean
     pluginEnabled: body.pluginEnabled !== false,
     kernelUrl: typeof body.kernelUrl === 'string' ? body.kernelUrl : '',
     kernelToken: typeof body.kernelToken === 'string' ? body.kernelToken : '',
-    kernelConnected: body.kernelConnected === true
-      || (typeof body.kernelUrl === 'string' && body.kernelUrl.length > 0
-        && typeof body.kernelToken === 'string' && body.kernelToken.length > 0),
+    kernelConnected: body.kernelConnected === true,
+    wssConnected: body.wssConnected === true,
+    wssLastError: typeof body.wssLastError === 'string' ? body.wssLastError : null,
     error: null,
     busy: false,
     settingsOpen,
@@ -89,7 +93,7 @@ export class AgentKernelHeaderController {
 
   constructor(
     private readonly fetcher: Fetch = (input, init) => fetch(input, init),
-    private readonly pollMs = 15_000,
+    private readonly pollMs = 5_000,
   ) {}
 
   watch(sessionId: SessionId): void {
@@ -148,6 +152,29 @@ export class AgentKernelHeaderController {
     await this.patch(sessionId, settings)
   }
 
+  async claimPair(sessionId: SessionId, code: string, kernelUrl: string): Promise<void> {
+    if (this.disposed) return
+    const prev = this.store.getSnapshot().bySession[String(sessionId)] ?? EMPTY
+    this.publish(sessionId, { ...prev, busy: true, error: null })
+    try {
+      const response = await this.fetcher(new URL('/api/agent-kernel.pair', hostBase()), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, kernelUrl }),
+      })
+      if (!response.ok) {
+        const detail = await response.text().catch(() => '')
+        throw new Error(`Pair failed: HTTP ${String(response.status)}${detail === '' ? '' : ` ${detail}`}`)
+      }
+      if (this.disposed) return
+      await this.refresh(sessionId)
+    } catch (error) {
+      if (this.disposed) return
+      const current = this.store.getSnapshot().bySession[String(sessionId)] ?? prev
+      this.publish(sessionId, { ...current, busy: false, error: messageOf(error) })
+    }
+  }
+
   async dispose(): Promise<void> {
     this.disposed = true
     for (const sessionId of [...this.polls.keys()]) this.unwatch(sessionId)
@@ -167,7 +194,7 @@ export class AgentKernelHeaderController {
     const prev = this.store.getSnapshot().bySession[String(sessionId)] ?? EMPTY
     this.publish(sessionId, { ...prev, busy: true, error: null })
     try {
-      const response = await this.fetcher(new URL('/api/agent-kernel.nudge', hostBase()), {
+      const response = await this.fetcher(new URL('/api/agent-kernel.followup', hostBase()), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId, ...patch }),

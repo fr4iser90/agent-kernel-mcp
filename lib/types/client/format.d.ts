@@ -13,20 +13,20 @@ export declare function formatAutonomyDuration(ms: number): string;
  */
 export declare function formatAutonomyTimeLabel(runStartedAt: string, maxDurationMinutes: number, nowMs: number): string;
 /**
- * Remaining Session-nudge window label for the Header capsule.
- * @param enabled - whether nudge is armed.
+ * Remaining Session-followup window label for the Header capsule.
+ * @param enabled - whether followup is armed.
  * @param armedAt - ISO arm start.
  * @param activeHours - `0` = forever.
  * @param nowMs - clock.
  * @param foreverLabel - copy when unlimited.
  * @returns remaining label, forever label, or empty when off.
  */
-export declare function formatNudgeCountdownLabel(enabled: boolean, armedAt: string, activeHours: number, nowMs: number, foreverLabel: string): string;
+export declare function formatFollowupCountdownLabel(enabled: boolean, armedAt: string, activeHours: number, nowMs: number, foreverLabel: string): string;
 /**
  * Compact "next Host idle check" label for the Header capsule.
  * @param remainingMs - ms until estimated next check, or `null` when off.
  * @param soonLabel - fallback when remaining is non-positive (should not occur for a cycling countdown).
  * @returns `↓ 3m`, soon label, or empty when not armed.
  */
-export declare function formatNudgeNextCheckLabel(remainingMs: number | null, soonLabel: string): string;
+export declare function formatFollowupNextCheckLabel(remainingMs: number | null, soonLabel: string): string;
 //# sourceMappingURL=format.d.ts.map

@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "agent-kernel": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["REPLACE_WITH_ABSOLUTE_PATH/agent-kernel-mcp/dist/mcp/index.js"],
+      "env": {}
+    }
+  }
+}

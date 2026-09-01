@@ -40,15 +40,15 @@ export function formatAutonomyTimeLabel(
 }
 
 /**
- * Remaining Session-nudge window label for the Header capsule.
- * @param enabled - whether nudge is armed.
+ * Remaining Session-followup window label for the Header capsule.
+ * @param enabled - whether followup is armed.
  * @param armedAt - ISO arm start.
  * @param activeHours - `0` = forever.
  * @param nowMs - clock.
  * @param foreverLabel - copy when unlimited.
  * @returns remaining label, forever label, or empty when off.
  */
-export function formatNudgeCountdownLabel(
+export function formatFollowupCountdownLabel(
   enabled: boolean,
   armedAt: string,
   activeHours: number,
@@ -70,7 +70,7 @@ export function formatNudgeCountdownLabel(
  * @param soonLabel - fallback when remaining is non-positive (should not occur for a cycling countdown).
  * @returns `↓ 3m`, soon label, or empty when not armed.
  */
-export function formatNudgeNextCheckLabel(
+export function formatFollowupNextCheckLabel(
   remainingMs: number | null,
   soonLabel: string,
 ): string {
